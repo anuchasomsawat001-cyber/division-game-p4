@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สมรภูมิหารเลข ป.4 - โรงเรียนไทยรัฐวิทยา ๔๒</title>
+    <!-- โหลด Tailwind CSS และ ฟอนต์ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- โหลดไลบรารีสำหรับทำพลุกระดาษ (Confetti) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Mali', cursive;
+            background-color: #0f172a;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: #f8fafc;
+            overflow: hidden;
+        }
+        .arcade-box {
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1);
+            border: 2px solid #334155;
+            background: #1e293b;
+        }
+        .input-arcade {
+            border-radius: 8px;
+            border: 2px solid #475569;
+            background: #0f172a;
+            color: #fbbf24;
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.5);
+            text-shadow: 0 0 5px rgba(251, 191, 36, 0.5);
+        }
+        .btn-arcade {
+            border-radius: 8px;
+            box-shadow: 0 6px 0 #000;
+            transition: transform 0.1s, box-shadow 0.1s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-arcade:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #000;
+        }
+        .shake { animation: shake 0.4s; }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-15px); }
+            50% { transform: translateX(15px); }
+            75% { transform: translateX(-15px); }
+            100% { transform: translateX(0); }
+        }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .vs-overlay { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); }
+        .slide-in-left { animation: slideLeft 0.5s ease-out forwards; }
+        .slide-in-right { animation: slideRight 0.5s ease-out forwards; }
+        .zoom-in-bounce {
+            animation: zoomBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            animation-delay: 0.3s;
+            opacity: 0;
+            transform: scale(0);
+        }
+        @keyframes slideLeft { from { transform: translateX(-100vw); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideRight { from { transform: translateX(100vw); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes zoomBounce {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .glow-p1 {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), inset 0 0 10px rgba(59, 130, 246, 0.5);
+            border-color: #3b82f6 !important;
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        .glow-p2 {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), inset 0 0 10px rgba(239, 68, 68, 0.5);
+            border-color: #ef4444 !important;
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        /* แอนิเมชันสำหรับแท่นรับรางวัล */
+        .podium-up {
+            animation: podiumRise 1s ease-out forwards;
+            transform: translateY(100%);
+        }
+        @keyframes podiumRise {
+            to { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen relative flex flex-col">
+
+    <!-- ปุ่ม Fullscreen (แสดงทุกหน้าต่าง) -->
+    <button onclick="toggleFullScreen()" class="fixed top-4 right-4 z-[100] bg-slate-800 text-2xl p-3 rounded-xl border-2 border-slate-600 hover:bg-slate-700 shadow-lg transition-transform hover:scale-110" title="ขยายเต็มจอ">
+        📺
+    </button>
+
+    <!-- 1. หน้าตั้งค่าเริ่มต้น (Setup Screen) -->
+    <div id="setup-screen" class="w-full h-full absolute inset-0 z-50 bg-[#0f172a] overflow-auto pt-8 pb-8 px-4">
+        <div class="max-w-4xl mx-auto arcade-box p-8 text-center mt-4">
+            <h1 class="text-5xl font-black text-yellow-400 mb-2 drop-shadow-md">⚔️ สมรภูมิหารเลข ป.4 ⚔️</h1>
+            <h2 class="text-2xl text-cyan-400 font-bold mb-8 tracking-widest">โรงเรียนไทยรัฐวิทยา ๔๒</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-600">
+                    <h3 class="text-xl font-bold mb-2 text-white">👥 รายชื่อนักเรียน (บรรทัดละคน)</h3>
+                    <textarea id="player-list" class="w-full h-48 p-4 input-arcade text-lg" placeholder="ด.ช.สมชาย&#10;ด.ญ.สมศรี&#10;ด.ช.มานะ"></textarea>
+                </div>
+
+                <div class="bg-slate-800 p-6 rounded-xl flex flex-col justify-center border border-slate-600">
+                    <h3 class="text-xl font-bold mb-4 text-white">⚙️ ตั้งค่าความโหด</h3>
+                    <div class="mb-4">
+                        <label class="block font-bold mb-1 text-gray-300">จำนวนหลักตัวตั้ง (2-5):</label>
+                        <input type="number" id="dividend-digits" min="2" max="5" value="3" class="w-full p-2 input-arcade text-center text-xl">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block font-bold mb-1 text-gray-300">จำนวนหลักตัวหาร (1-3):</label>
+                        <input type="number" id="divisor-digits" min="1" max="3" value="1" class="w-full p-2 input-arcade text-center text-xl">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block font-bold mb-1 text-gray-300">เวลาต่อรอบ (วินาที):</label>
+                        <input type="number" id="time-limit" min="10" max="120" value="30" class="w-full p-2 input-arcade text-center text-xl">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startTournament()" class="mt-8 bg-green-500 hover:bg-green-400 text-white text-3xl font-black py-4 px-12 btn-arcade w-full md:w-auto border-2 border-green-700">
+                🚀 เริ่มทัวร์นาเมนต์!
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. แจ้งเตือนสุ่มรอบใหม่ -->
+    <div id="round-transition-modal" class="fixed inset-0 z-50 hidden vs-overlay flex flex-col justify-center items-center overflow-hidden px-4">
+        <div class="arcade-box p-8 text-center max-w-2xl w-full bg-slate-800">
+            <h2 class="text-4xl text-yellow-400 font-black mb-2">🎉 จบการสุ่มรอบที่ <span id="transition-round-display"></span> 🎉</h2>
+            <p class="text-xl text-white mb-8">นักเรียนทุกคนได้ออกมาแข่งครบแล้ว! กำลังจะเริ่มสุ่มรอบใหม่ คุณครูสามารถปรับความยากได้ที่นี่ครับ</p>
+            
+            <div class="grid grid-cols-3 gap-4 mb-8 text-left">
+                <div>
+                    <label class="block text-gray-300 font-bold mb-2 text-sm text-center">หลักตัวตั้ง</label>
+                    <input type="number" id="edit-dividend" min="2" max="5" class="w-full p-2 input-arcade text-center text-2xl font-bold">
+                </div>
+                <div>
+                    <label class="block text-gray-300 font-bold mb-2 text-sm text-center">หลักตัวหาร</label>
+                    <input type="number" id="edit-divisor" min="1" max="3" class="w-full p-2 input-arcade text-center text-2xl font-bold">
+                </div>
+                <div>
+                    <label class="block text-gray-300 font-bold mb-2 text-sm text-center">เวลา (วิ)</label>
+                    <input type="number" id="edit-time" min="10" max="120" class="w-full p-2 input-arcade text-center text-2xl font-bold">
+                </div>
+            </div>
+            
+            <button onclick="startNextRoundFromModal()" class="bg-blue-500 hover:bg-blue-400 text-white text-3xl font-black py-4 px-8 btn-arcade w-full border-2 border-blue-700">
+                เริ่มลุยรอบใหม่! 🚀
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. แอนิเมชันประกาศคู่ชก -->
+    <div id="vs-modal" class="fixed inset-0 z-40 hidden vs-overlay flex flex-col justify-center items-center overflow-hidden">
+        <h2 class="text-3xl text-yellow-400 font-bold mb-8">รอบที่ <span id="modal-round">1</span></h2>
+        <div class="flex items-center justify-center w-full gap-8 px-4">
+            <div id="modal-p1" class="text-5xl md:text-7xl font-black text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,0.8)] text-center break-words">PLAYER 1</div>
+            <div id="modal-vs" class="text-7xl md:text-9xl font-black text-white italic drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]">VS</div>
+            <div id="modal-p2" class="text-5xl md:text-7xl font-black text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] text-center break-words">PLAYER 2</div>
+        </div>
+    </div>
+
+    <!-- 4. หน้าจอรอกดเริ่มสุ่มโจทย์ -->
+    <div id="ready-overlay" class="fixed inset-0 z-40 hidden flex flex-col justify-center items-center bg-black/70 backdrop-blur-sm">
+        <div class="flex items-center justify-center gap-4 md:gap-8 mb-8 bg-slate-900/90 px-8 py-6 rounded-3xl border-4 border-slate-700 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+            <div id="ready-p1" class="text-4xl md:text-6xl font-black text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,0.8)] text-center">P1</div>
+            <div class="text-3xl md:text-5xl font-black text-white italic">VS</div>
+            <div id="ready-p2" class="text-4xl md:text-6xl font-black text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] text-center">P2</div>
+        </div>
+        <button onclick="startQuestionPhase()" class="bg-yellow-500 hover:bg-yellow-400 border-4 border-yellow-700 text-black text-3xl md:text-5xl font-black py-8 px-12 rounded-2xl shadow-[0_0_40px_rgba(234,179,8,0.6)] btn-arcade hover:scale-105 transition-transform">
+            🔥 ประจำที่แล้ว <br><span class="text-2xl mt-2 block">คลิกที่นี่เพื่อเริ่มสุ่มโจทย์!</span> 🔥
+        </button>
+    </div>
+
+    <!-- 5. หน้าแข่งขันหลัก -->
+    <div id="vs-screen" class="hidden flex flex-col flex-1 relative bg-slate-900">
+        
+        <div class="h-28 bg-slate-800 border-b-4 border-slate-950 flex justify-between items-center px-8 z-20 relative shadow-2xl shrink-0">
+            <div class="text-3xl font-bold text-gray-400">ROUND: <span id="round-display" class="text-white">1</span></div>
+            <div class="bg-slate-900 border-4 border-yellow-500 rounded-xl px-10 py-4 text-5xl font-black text-yellow-400 absolute left-1/2 transform -translate-x-1/2 shadow-[0_0_20px_rgba(234,179,8,0.4)] whitespace-nowrap">
+                <span id="question-display">รอสุ่มโจทย์...</span>
+            </div>
+            <div class="text-4xl font-black text-red-500 tracking-wider transition-colors duration-300 mr-12" id="timer-container">⏱️ <span id="timer-display">0</span></div>
+        </div>
+
+        <div class="flex flex-1">
+            <!-- P1 -->
+            <div class="w-1/2 bg-blue-900 flex flex-col justify-center items-center relative p-4 border-r-8 border-slate-950 shadow-[inset_0_0_100px_rgba(0,0,0,0.5)]">
+                <div class="absolute top-6 left-6 bg-slate-900/80 px-8 py-3 rounded-xl border-2 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                    <div class="text-2xl font-black text-blue-400" id="p1-name">ผู้เล่น 1</div>
+                    <div class="text-xl text-gray-300 mt-1">SCORE: <span id="p1-score" class="font-bold text-2xl text-white">0</span></div>
+                </div>
+                <input type="number" id="p1-input" class="w-3/4 max-w-sm text-center text-6xl font-bold p-6 input-arcade mb-8 placeholder-slate-700 focus:ring-4 focus:ring-blue-400 focus:outline-none" placeholder="?" onkeyup="checkEnter(event, 1)" disabled>
+                <button onclick="submitAnswer(1)" class="bg-blue-600 hover:bg-blue-500 border-2 border-blue-800 text-white text-3xl font-black py-5 px-8 btn-arcade w-3/4 max-w-sm">SEND (P1)</button>
+            </div>
+
+            <!-- P2 -->
+            <div class="w-1/2 bg-red-900 flex flex-col justify-center items-center relative p-4 shadow-[inset_0_0_100px_rgba(0,0,0,0.5)]">
+                <div class="absolute top-6 right-6 bg-slate-900/80 px-8 py-3 rounded-xl border-2 border-red-500 text-right shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+                    <div class="text-2xl font-black text-red-500" id="p2-name">ผู้เล่น 2</div>
+                    <div class="text-xl text-gray-300 mt-1">SCORE: <span id="p2-score" class="font-bold text-2xl text-white">0</span></div>
+                </div>
+                <input type="number" id="p2-input" class="w-3/4 max-w-sm text-center text-6xl font-bold p-6 input-arcade mb-8 placeholder-slate-700 focus:ring-4 focus:ring-red-400 focus:outline-none" placeholder="?" onkeyup="checkEnter(event, 2)" disabled>
+                <button onclick="submitAnswer(2)" class="bg-red-600 hover:bg-red-500 border-2 border-red-800 text-white text-3xl font-black py-5 px-8 btn-arcade w-3/4 max-w-sm">SEND (P2)</button>
+            </div>
+        </div>
+
+        <!-- แถบด้านล่าง + ปุ่มจบเกม -->
+        <div class="h-32 bg-slate-950 border-t-4 border-slate-700 flex flex-col items-center py-2 shrink-0 relative z-20">
+            <div class="text-yellow-400 font-bold mb-2 text-sm tracking-widest uppercase flex justify-between w-full px-8 items-center">
+                <span>🏆 กระดานคะแนนรวม (Live) 🏆</span>
+                <button onclick="showPodium()" class="bg-slate-800 text-gray-300 hover:text-white hover:bg-slate-700 border border-slate-600 px-4 py-1 rounded-full text-xs transition">
+                    🛑 จบการแข่งขัน / มอบรางวัล
+                </button>
+            </div>
+            <div id="live-leaderboard" class="flex gap-4 overflow-x-auto w-full px-8 pb-2 hide-scroll items-center justify-start scroll-smooth">
+                <!-- ข้อมูลคะแนนจะถูกสร้างผ่าน JS ตรงนี้ -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. แท่นรับรางวัล (Podium Screen) 🎉 -->
+    <div id="podium-screen" class="hidden absolute inset-0 z-[60] bg-slate-900 flex flex-col justify-center items-center overflow-hidden">
+        <h1 class="text-6xl md:text-7xl font-black text-yellow-400 mb-16 drop-shadow-[0_0_20px_rgba(250,204,21,0.6)]">🏆 สรุปผลการแข่งขัน 🏆</h1>
+        
+        <!-- แท่นยืน (Podium) -->
+        <div class="flex items-end justify-center gap-2 md:gap-6 h-72 mb-16 px-4 w-full max-w-4xl">
+            <!-- อันดับ 2 -->
+            <div class="flex flex-col items-center w-1/3 podium-up" style="animation-delay: 0.5s;">
+                <div id="podium-2-name" class="text-2xl md:text-3xl font-bold text-gray-300 mb-2 truncate w-full text-center px-2"></div>
+                <div id="podium-2-score" class="text-lg text-gray-400 mb-2 font-bold"></div>
+                <div class="w-full h-40 bg-gradient-to-b from-gray-300 to-gray-500 rounded-t-xl flex justify-center items-start pt-4 text-5xl font-black shadow-[0_0_30px_rgba(156,163,175,0.3)] text-gray-800 border-t-4 border-gray-100">2</div>
+            </div>
+            <!-- อันดับ 1 -->
+            <div class="flex flex-col items-center w-1/3 podium-up" style="animation-delay: 1s;">
+                <div id="podium-1-name" class="text-3xl md:text-5xl font-black text-yellow-400 mb-2 truncate w-full text-center px-2 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]"></div>
+                <div id="podium-1-score" class="text-xl text-yellow-200 mb-2 font-bold"></div>
+                <div class="w-full h-56 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-t-xl flex justify-center items-start pt-4 text-6xl font-black shadow-[0_0_40px_rgba(250,204,21,0.5)] text-yellow-900 border-t-4 border-yellow-200">1</div>
+            </div>
+            <!-- อันดับ 3 -->
+            <div class="flex flex-col items-center w-1/3 podium-up" style="animation-delay: 0s;">
+                <div id="podium-3-name" class="text-2xl md:text-3xl font-bold text-orange-400 mb-2 truncate w-full text-center px-2"></div>
+                <div id="podium-3-score" class="text-lg text-orange-300 mb-2 font-bold"></div>
+                <div class="w-full h-28 bg-gradient-to-b from-orange-400 to-orange-700 rounded-t-xl flex justify-center items-start pt-4 text-4xl font-black shadow-[0_0_30px_rgba(249,115,22,0.3)] text-orange-900 border-t-4 border-orange-200">3</div>
+            </div>
+        </div>
+
+        <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-500 text-white text-2xl font-bold py-4 px-10 btn-arcade border-2 border-blue-400 z-10 shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+            🔄 เริ่มเกมใหม่ทั้งหมด
+        </button>
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+        // --- ระบบ Fullscreen ---
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // --- ระบบเสียง SFX ---
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+        }
+
+        const SFX = {
+            playTone: function(freq, type, duration, vol=0.1) {
+                if(!audioCtx) return;
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            },
+            start: function() {
+                initAudio();
+                this.playTone(440, 'square', 0.1);
+                setTimeout(() => this.playTone(659, 'square', 0.2), 100);
+                setTimeout(() => this.playTone(880, 'square', 0.4), 200);
+            },
+            vs: function() {
+                if(!audioCtx) return;
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 1);
+            },
+            tick: function(high=false) {
+                this.playTone(high ? 800 : 400, 'square', 0.05, 0.05);
+            },
+            correct: function() {
+                if(!audioCtx) return;
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); 
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); 
+                osc.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.3); 
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
+            },
+            wrong: function() {
+                if(!audioCtx) return;
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            },
+            timeout: function() {
+                if(!audioCtx) return;
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 1);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 1);
+            },
+            victory: function() {
+                if(!audioCtx) return;
+                let notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50]; // เพลงฉลอง
+                let time = audioCtx.currentTime;
+                notes.forEach((freq, i) => {
+                    let osc = audioCtx.createOscillator();
+                    let gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.type = 'square';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.1, time + i * 0.15);
+                    gain.gain.exponentialRampToValueAtTime(0.001, time + i * 0.15 + 0.1);
+                    osc.start(time + i * 0.15);
+                    osc.stop(time + i * 0.15 + 0.1);
+                });
+            }
+        };
+
+        // --- ตัวแปรหลักของเกม ---
+        let players = [];
+        let pendingPlayers = [];
+        let currentP1 = null;
+        let currentP2 = null;
+        let currentAnswer = 0;
+        let timerInterval;
+        let timeRemaining = 0;
+        let round = 1;
+
+        function startTournament() {
+            SFX.start(); 
+            const listText = document.getElementById('player-list').value.trim();
+            if(!listText) { alert('กรุณาใส่รายชื่อนักเรียนก่อนครับ!'); return; }
+            
+            players = listText.split('\n').filter(n => n.trim() !== '').map(name => ({ name: name.trim(), score: 0 }));
+            pendingPlayers = [...players];
+            round = 1;
+            
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('vs-screen').classList.remove('hidden');
+            
+            updateLiveLeaderboard();
+            nextMatch();
+        }
+
+        function nextMatch() {
+            document.getElementById('p1-input').disabled = true;
+            document.getElementById('p2-input').disabled = true;
+            document.getElementById('p1-input').value = '';
+            document.getElementById('p2-input').value = '';
+            document.getElementById('question-display').innerText = 'รอสุ่มโจทย์...';
+            document.getElementById('timer-display').innerText = '0';
+            document.getElementById('timer-container').classList.remove('text-red-500', 'animate-pulse');
+            document.getElementById('timer-container').classList.add('text-gray-400');
+
+            if(pendingPlayers.length < 2) {
+                showRoundTransitionModal();
+                return;
+            }
+
+            continueMatchSetup();
+        }
+
+        function showRoundTransitionModal() {
+            SFX.start();
+            currentP1 = null; 
+            currentP2 = null;
+            updateLiveLeaderboard(); 
+
+            document.getElementById('transition-round-display').innerText = round;
+            document.getElementById('edit-dividend').value = document.getElementById('dividend-digits').value;
+            document.getElementById('edit-divisor').value = document.getElementById('divisor-digits').value;
+            document.getElementById('edit-time').value = document.getElementById('time-limit').value;
+
+            document.getElementById('round-transition-modal').classList.remove('hidden');
+        }
+
+        function startNextRoundFromModal() {
+            SFX.playTone(880, 'square', 0.2);
+            document.getElementById('dividend-digits').value = document.getElementById('edit-dividend').value;
+            document.getElementById('divisor-digits').value = document.getElementById('edit-divisor').value;
+            document.getElementById('time-limit').value = document.getElementById('edit-time').value;
+
+            let playersToAddBack = players.filter(p => !pendingPlayers.includes(p));
+            pendingPlayers = pendingPlayers.concat(playersToAddBack);
+            
+            round++;
+            document.getElementById('round-transition-modal').classList.add('hidden');
+            
+            continueMatchSetup();
+        }
+
+        function continueMatchSetup() {
+            shuffleArray(pendingPlayers);
+            currentP1 = pendingPlayers.pop();
+            currentP2 = pendingPlayers.pop();
+
+            document.getElementById('p1-name').innerText = currentP1.name;
+            document.getElementById('p1-score').innerText = currentP1.score;
+            document.getElementById('p2-name').innerText = currentP2.name;
+            document.getElementById('p2-score').innerText = currentP2.score;
+            document.getElementById('round-display').innerText = round;
+
+            updateLiveLeaderboard(); 
+            playVSAnimation(currentP1.name, currentP2.name, round);
+        }
+
+        function playVSAnimation(p1Name, p2Name, currentRound) {
+            SFX.vs(); 
+            const modal = document.getElementById('vs-modal');
+            const elP1 = document.getElementById('modal-p1');
+            const elVS = document.getElementById('modal-vs');
+            const elP2 = document.getElementById('modal-p2');
+            
+            document.getElementById('modal-round').innerText = currentRound;
+            elP1.innerText = p1Name;
+            elP2.innerText = p2Name;
+            document.getElementById('ready-p1').innerText = p1Name;
+            document.getElementById('ready-p2').innerText = p2Name;
+            
+            elP1.className = 'text-5xl md:text-7xl font-black text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,0.8)] text-center break-words';
+            elVS.className = 'text-7xl md:text-9xl font-black text-white italic drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]';
+            elP2.className = 'text-5xl md:text-7xl font-black text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] text-center break-words';
+
+            modal.classList.remove('hidden');
+            void modal.offsetWidth; 
+            
+            elP1.classList.add('slide-in-left');
+            elVS.classList.add('zoom-in-bounce');
+            elP2.classList.add('slide-in-right');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('ready-overlay').classList.remove('hidden');
+            }, 2500);
+        }
+
+        function startQuestionPhase() {
+            initAudio(); 
+            SFX.playTone(600, 'square', 0.1);
+            document.getElementById('ready-overlay').classList.add('hidden');
+            generateQuestionWithAnimation();
+        }
+
+        function generateQuestionWithAnimation() {
+            const divDigits = parseInt(document.getElementById('dividend-digits').value);
+            const divisorDigits = parseInt(document.getElementById('divisor-digits').value);
+
+            let minDivisor = Math.pow(10, divisorDigits - 1);
+            let maxDivisor = Math.pow(10, divisorDigits) - 1;
+            if(divisorDigits === 1) minDivisor = 2; 
+
+            let trueDivisor = Math.floor(Math.random() * (maxDivisor - minDivisor + 1)) + minDivisor;
+            let minDividend = Math.pow(10, divDigits - 1);
+            let maxDividend = Math.pow(10, divDigits) - 1;
+
+            let minMultiplier = Math.ceil(minDividend / trueDivisor);
+            let maxMultiplier = Math.floor(maxDividend / trueDivisor);
+
+            if (minMultiplier > maxMultiplier) {
+                minMultiplier = 1;
+                maxMultiplier = 9;
+            }
+
+            currentAnswer = Math.floor(Math.random() * (maxMultiplier - minMultiplier + 1)) + minMultiplier;
+            let trueDividend = trueDivisor * currentAnswer;
+            const display = document.getElementById('question-display');
+            
+            let ticks = 0;
+            let maxTicks = 20; 
+            
+            let shuffleInterval = setInterval(() => {
+                SFX.tick(); 
+                let randomDivd = Math.floor(Math.random() * (maxDividend - minDividend + 1)) + minDividend;
+                let randomDiv = Math.floor(Math.random() * (maxDivisor - minDivisor + 1)) + minDivisor;
+                display.innerText = `${randomDivd} ÷ ${randomDiv} = ?`;
+                
+                ticks++;
+                if (ticks >= maxTicks) {
+                    clearInterval(shuffleInterval);
+                    SFX.tick(true); 
+                    display.innerText = `${trueDividend.toLocaleString()} ÷ ${trueDivisor.toLocaleString()} = ?`;
+                    display.classList.add('text-green-400');
+                    setTimeout(() => display.classList.remove('text-green-400'), 500);
+                    
+                    document.getElementById('p1-input').disabled = false;
+                    document.getElementById('p2-input').disabled = false;
+                    document.getElementById('p1-input').focus();
+                    startTimer();
+                }
+            }, 50);
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeRemaining = parseInt(document.getElementById('time-limit').value);
+            const timerDisplay = document.getElementById('timer-display');
+            const timerContainer = document.getElementById('timer-container');
+            
+            timerDisplay.innerText = timeRemaining;
+            timerContainer.classList.remove('text-gray-400');
+            timerContainer.classList.add('text-yellow-400'); 
+
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                timerDisplay.innerText = timeRemaining;
+                
+                if(timeRemaining <= 5 && timeRemaining > 0) {
+                    SFX.tick();
+                    timerContainer.classList.remove('text-yellow-400');
+                    timerContainer.classList.add('text-red-500', 'animate-pulse');
+                }
+
+                if(timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    SFX.timeout();
+                    timerContainer.classList.remove('animate-pulse');
+                    setTimeout(() => {
+                        alert('หมดเวลา! เสมอกันครับ ⏱️');
+                        nextMatch();
+                    }, 100);
+                }
+            }, 1000);
+        }
+
+        function checkEnter(e, playerNum) {
+            if (e.key === 'Enter') {
+                submitAnswer(playerNum);
+            }
+        }
+
+        function submitAnswer(playerNum) {
+            const inputId = playerNum === 1 ? 'p1-input' : 'p2-input';
+            const inputEl = document.getElementById(inputId);
+            const answer = parseInt(inputEl.value);
+            
+            if(isNaN(answer)) return;
+
+            if(answer === currentAnswer) {
+                SFX.correct(); 
+                clearInterval(timerInterval);
+                document.getElementById('timer-container').classList.remove('animate-pulse');
+
+                if(playerNum === 1) currentP1.score++;
+                else currentP2.score++;
+                
+                updateLiveLeaderboard(); 
+                
+                setTimeout(() => {
+                    alert(`🎉 ${playerNum === 1 ? currentP1.name : currentP2.name} ตอบถูก! รับ 1 คะแนน`);
+                    nextMatch();
+                }, 100);
+            } else {
+                SFX.wrong(); 
+                inputEl.classList.add('shake', 'bg-red-900', 'text-white');
+                setTimeout(() => {
+                    inputEl.classList.remove('shake', 'bg-red-900', 'text-white');
+                    inputEl.value = '';
+                }, 400);
+            }
+        }
+
+        function updateLiveLeaderboard() {
+            let sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+            let html = '';
+            
+            sortedPlayers.forEach((p, index) => {
+                let medal = '';
+                let boxStyle = 'bg-slate-800 border-slate-600 text-gray-300';
+                
+                if (index === 0 && p.score > 0) { medal = '🥇 '; boxStyle = 'bg-yellow-900/50 border-yellow-500 text-yellow-400'; }
+                else if (index === 1 && p.score > 0) { medal = '🥈 '; boxStyle = 'bg-gray-700 border-gray-400 text-gray-200'; }
+                else if (index === 2 && p.score > 0) { medal = '🥉 '; boxStyle = 'bg-orange-900/50 border-orange-500 text-orange-400'; }
+                else { medal = `#${index + 1} `; }
+
+                let glowClass = '';
+                if (currentP1 && p.name === currentP1.name) { glowClass = 'glow-p1'; } 
+                else if (currentP2 && p.name === currentP2.name) { glowClass = 'glow-p2'; }
+
+                html += `
+                <div class="${boxStyle} ${glowClass} border-2 rounded-lg px-4 py-2 flex flex-col items-center min-w-[140px] shadow-md shrink-0 transition-all duration-300">
+                    <div class="text-sm font-bold truncate w-full text-center">${medal}${p.name}</div>
+                    <div class="text-3xl font-black mt-1">${p.score}</div>
+                </div>`;
+            });
+            
+            document.getElementById('live-leaderboard').innerHTML = html;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // --- ระบบจบเกม & แท่นรับรางวัล (Podium) ---
+        function showPodium() {
+            clearInterval(timerInterval);
+            document.getElementById('vs-screen').classList.add('hidden');
+            document.getElementById('podium-screen').classList.remove('hidden');
+
+            // เรียงลำดับคะแนน
+            let sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+
+            // ใส่ชื่อและคะแนนในแท่น
+            if(sortedPlayers[0]) {
+                document.getElementById('podium-1-name').innerText = "🥇 " + sortedPlayers[0].name;
+                document.getElementById('podium-1-score').innerText = sortedPlayers[0].score + " คะแนน";
+            }
+            if(sortedPlayers[1]) {
+                document.getElementById('podium-2-name').innerText = "🥈 " + sortedPlayers[1].name;
+                document.getElementById('podium-2-score').innerText = sortedPlayers[1].score + " คะแนน";
+            }
+            if(sortedPlayers[2]) {
+                document.getElementById('podium-3-name').innerText = "🥉 " + sortedPlayers[2].name;
+                document.getElementById('podium-3-score').innerText = sortedPlayers[2].score + " คะแนน";
+            }
+
+            // ดีเลย์เล่นเสียงและยิงพลุให้ตรงจังหวะแท่นเลื่อนขึ้นมา
+            setTimeout(() => {
+                SFX.victory();
+                shootConfetti();
+            }, 1000);
+        }
+
+        // ฟังก์ชันยิงพลุกระดาษ (Confetti) ต่อเนื่อง 3 วินาที
+        function shootConfetti() {
+            var duration = 3000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+                // ยิงจากฝั่งซ้าย
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#fbbf24', '#3b82f6', '#ef4444', '#10b981']
+                });
+                // ยิงจากฝั่งขวา
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#fbbf24', '#3b82f6', '#ef4444', '#10b981']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+    </script>
+</body>
+</html>
