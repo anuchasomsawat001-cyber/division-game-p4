@@ -108,7 +108,7 @@
         📺
     </button>
 
-    <!-- ระบบแจ้งเตือน In-game (แทนที่ alert) -->
+    <!-- ระบบแจ้งเตือน In-game -->
     <div id="game-alert-overlay" class="fixed inset-0 z-[70] hidden bg-black/60 backdrop-blur-sm flex justify-center items-center">
         <div id="game-alert-box" class="arcade-box p-8 text-center border-4 transform transition-all duration-300">
             <h2 id="game-alert-title" class="text-4xl md:text-5xl font-black mb-4 drop-shadow-md"></h2>
@@ -272,9 +272,14 @@
             </div>
         </div>
 
-        <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-500 text-white text-2xl font-bold py-4 px-10 btn-arcade border-2 border-blue-400 z-10 shadow-[0_0_20px_rgba(59,130,246,0.5)]">
-            🔄 เริ่มเกมใหม่ทั้งหมด
-        </button>
+        <div class="flex gap-4 z-10">
+            <button onclick="downloadScoresCSV()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xl font-bold py-4 px-8 btn-arcade border-2 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.5)]">
+                📥 โหลดไฟล์ Excel สรุปคะแนน
+            </button>
+            <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-500 text-white text-xl font-bold py-4 px-8 btn-arcade border-2 border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+                🔄 เริ่มเกมใหม่
+            </button>
+        </div>
     </div>
 
     <!-- SCRIPT -->
@@ -302,7 +307,6 @@
             titleEl.innerText = title;
             subEl.innerText = subtitle;
             
-            // เปลี่ยนสีตามสถานการณ์
             box.className = 'arcade-box p-8 text-center border-4 transform transition-all duration-300 banner-pop ';
             if(type === 'p1') {
                 box.classList.add('bg-blue-900', 'border-blue-400', 'shadow-[0_0_30px_rgba(59,130,246,0.6)]');
@@ -317,13 +321,11 @@
 
             overlay.classList.remove('hidden');
             
-            // ปิดอัตโนมัติหลังจาก 2 วินาที แล้วรันรอบต่อไป
             setTimeout(() => {
                 overlay.classList.add('hidden');
                 nextMatch();
             }, 2000);
         }
-
 
         // --- ระบบเสียง SFX ---
         let audioCtx;
@@ -630,8 +632,6 @@
                     clearInterval(timerInterval);
                     SFX.timeout();
                     timerContainer.classList.remove('animate-pulse');
-                    
-                    // เปลี่ยนจาก alert() เป็น In-game alert
                     showGameAlert("หมดเวลา!", "เสมอในรอบนี้ ⏱️", "draw");
                 }
             }, 1000);
@@ -669,8 +669,6 @@
                 }
                 
                 updateLiveLeaderboard(); 
-                
-                // เปลี่ยนจาก alert() เป็น In-game alert
                 showGameAlert(`🎉 ${winnerName} ตอบถูก!`, `รับ 1 คะแนน`, alertType);
 
             } else {
@@ -717,7 +715,7 @@
             }
         }
 
-        // --- ระบบจบเกม & แท่นรับรางวัล (Podium) ---
+        // --- ระบบจบเกม & แท่นรับรางวัล ---
         function showPodium() {
             clearInterval(timerInterval);
             document.getElementById('vs-screen').classList.add('hidden');
@@ -768,6 +766,36 @@
                     requestAnimationFrame(frame);
                 }
             }());
+        }
+
+        // --- ระบบดาวน์โหลดคะแนนเป็นไฟล์ CSV (เปิดใน Excel ได้) ---
+        function downloadScoresCSV() {
+            if (players.length === 0) return;
+            
+            // สร้างข้อมูล CSV พร้อมรองรับภาษาไทยด้วย BOM
+            let csvContent = "\uFEFFอันดับ,ชื่อนักเรียน,คะแนน\n";
+            let sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+            
+            sortedPlayers.forEach((p, index) => {
+                // ใส่เครื่องหมายคำพูดครอบชื่อกันกรณีชื่อมีเครื่องหมายลูกน้ำ
+                csvContent += `${index + 1},"${p.name}",${p.score}\n`;
+            });
+            
+            // สร้าง Blob เพื่อให้เบราว์เซอร์ดาวน์โหลดเป็นไฟล์
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            // สร้างลองค์จำลองแล้วกดคลิกเพื่อโหลด
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            
+            // ตั้งชื่อไฟล์ใส่วันที่ปัจจุบัน
+            const dateStr = new Date().toLocaleDateString('th-TH').replace(/\//g, '-');
+            link.setAttribute("download", `สรุปคะแนนเกมหารเลข_${dateStr}.csv`);
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>
