@@ -84,22 +84,37 @@
             transform: scale(1.05);
             z-index: 10;
         }
-        /* แอนิเมชันสำหรับแท่นรับรางวัล */
         .podium-up {
             animation: podiumRise 1s ease-out forwards;
             transform: translateY(100%);
         }
-        @keyframes podiumRise {
-            to { transform: translateY(0); }
+        @keyframes podiumRise { to { transform: translateY(0); } }
+        
+        /* แอนิเมชันสำหรับป้ายประกาศ In-game */
+        .banner-pop {
+            animation: bannerPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transform: scale(0);
+        }
+        @keyframes bannerPop {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
     </style>
 </head>
 <body class="min-h-screen relative flex flex-col">
 
-    <!-- ปุ่ม Fullscreen (แสดงทุกหน้าต่าง) -->
+    <!-- ปุ่ม Fullscreen -->
     <button onclick="toggleFullScreen()" class="fixed top-4 right-4 z-[100] bg-slate-800 text-2xl p-3 rounded-xl border-2 border-slate-600 hover:bg-slate-700 shadow-lg transition-transform hover:scale-110" title="ขยายเต็มจอ">
         📺
     </button>
+
+    <!-- ระบบแจ้งเตือน In-game (แทนที่ alert) -->
+    <div id="game-alert-overlay" class="fixed inset-0 z-[70] hidden bg-black/60 backdrop-blur-sm flex justify-center items-center">
+        <div id="game-alert-box" class="arcade-box p-8 text-center border-4 transform transition-all duration-300">
+            <h2 id="game-alert-title" class="text-4xl md:text-5xl font-black mb-4 drop-shadow-md"></h2>
+            <p id="game-alert-subtitle" class="text-xl md:text-2xl text-white font-bold"></p>
+        </div>
+    </div>
 
     <!-- 1. หน้าตั้งค่าเริ่มต้น (Setup Screen) -->
     <div id="setup-screen" class="w-full h-full absolute inset-0 z-50 bg-[#0f172a] overflow-auto pt-8 pb-8 px-4">
@@ -232,11 +247,10 @@
         </div>
     </div>
 
-    <!-- 6. แท่นรับรางวัล (Podium Screen) 🎉 -->
+    <!-- 6. แท่นรับรางวัล (Podium Screen) -->
     <div id="podium-screen" class="hidden absolute inset-0 z-[60] bg-slate-900 flex flex-col justify-center items-center overflow-hidden">
         <h1 class="text-6xl md:text-7xl font-black text-yellow-400 mb-16 drop-shadow-[0_0_20px_rgba(250,204,21,0.6)]">🏆 สรุปผลการแข่งขัน 🏆</h1>
         
-        <!-- แท่นยืน (Podium) -->
         <div class="flex items-end justify-center gap-2 md:gap-6 h-72 mb-16 px-4 w-full max-w-4xl">
             <!-- อันดับ 2 -->
             <div class="flex flex-col items-center w-1/3 podium-up" style="animation-delay: 0.5s;">
@@ -277,6 +291,39 @@
                 }
             }
         }
+
+        // --- ระบบแจ้งเตือน In-game แทน alert ---
+        function showGameAlert(title, subtitle, type) {
+            const overlay = document.getElementById('game-alert-overlay');
+            const box = document.getElementById('game-alert-box');
+            const titleEl = document.getElementById('game-alert-title');
+            const subEl = document.getElementById('game-alert-subtitle');
+            
+            titleEl.innerText = title;
+            subEl.innerText = subtitle;
+            
+            // เปลี่ยนสีตามสถานการณ์
+            box.className = 'arcade-box p-8 text-center border-4 transform transition-all duration-300 banner-pop ';
+            if(type === 'p1') {
+                box.classList.add('bg-blue-900', 'border-blue-400', 'shadow-[0_0_30px_rgba(59,130,246,0.6)]');
+                titleEl.classList.add('text-blue-300');
+            } else if (type === 'p2') {
+                box.classList.add('bg-red-900', 'border-red-400', 'shadow-[0_0_30px_rgba(239,68,68,0.6)]');
+                titleEl.classList.add('text-red-300');
+            } else {
+                box.classList.add('bg-gray-800', 'border-gray-400', 'shadow-[0_0_30px_rgba(156,163,175,0.6)]');
+                titleEl.classList.add('text-yellow-400');
+            }
+
+            overlay.classList.remove('hidden');
+            
+            // ปิดอัตโนมัติหลังจาก 2 วินาที แล้วรันรอบต่อไป
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                nextMatch();
+            }, 2000);
+        }
+
 
         // --- ระบบเสียง SFX ---
         let audioCtx;
@@ -368,7 +415,7 @@
             },
             victory: function() {
                 if(!audioCtx) return;
-                let notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50]; // เพลงฉลอง
+                let notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50]; 
                 let time = audioCtx.currentTime;
                 notes.forEach((freq, i) => {
                     let osc = audioCtx.createOscillator();
@@ -583,10 +630,9 @@
                     clearInterval(timerInterval);
                     SFX.timeout();
                     timerContainer.classList.remove('animate-pulse');
-                    setTimeout(() => {
-                        alert('หมดเวลา! เสมอกันครับ ⏱️');
-                        nextMatch();
-                    }, 100);
+                    
+                    // เปลี่ยนจาก alert() เป็น In-game alert
+                    showGameAlert("หมดเวลา!", "เสมอในรอบนี้ ⏱️", "draw");
                 }
             }, 1000);
         }
@@ -609,15 +655,24 @@
                 clearInterval(timerInterval);
                 document.getElementById('timer-container').classList.remove('animate-pulse');
 
-                if(playerNum === 1) currentP1.score++;
-                else currentP2.score++;
+                let winnerName = "";
+                let alertType = "";
+
+                if(playerNum === 1) {
+                    currentP1.score++;
+                    winnerName = currentP1.name;
+                    alertType = 'p1';
+                } else {
+                    currentP2.score++;
+                    winnerName = currentP2.name;
+                    alertType = 'p2';
+                }
                 
                 updateLiveLeaderboard(); 
                 
-                setTimeout(() => {
-                    alert(`🎉 ${playerNum === 1 ? currentP1.name : currentP2.name} ตอบถูก! รับ 1 คะแนน`);
-                    nextMatch();
-                }, 100);
+                // เปลี่ยนจาก alert() เป็น In-game alert
+                showGameAlert(`🎉 ${winnerName} ตอบถูก!`, `รับ 1 คะแนน`, alertType);
+
             } else {
                 SFX.wrong(); 
                 inputEl.classList.add('shake', 'bg-red-900', 'text-white');
@@ -668,10 +723,8 @@
             document.getElementById('vs-screen').classList.add('hidden');
             document.getElementById('podium-screen').classList.remove('hidden');
 
-            // เรียงลำดับคะแนน
             let sortedPlayers = [...players].sort((a, b) => b.score - a.score);
 
-            // ใส่ชื่อและคะแนนในแท่น
             if(sortedPlayers[0]) {
                 document.getElementById('podium-1-name').innerText = "🥇 " + sortedPlayers[0].name;
                 document.getElementById('podium-1-score').innerText = sortedPlayers[0].score + " คะแนน";
@@ -685,20 +738,17 @@
                 document.getElementById('podium-3-score').innerText = sortedPlayers[2].score + " คะแนน";
             }
 
-            // ดีเลย์เล่นเสียงและยิงพลุให้ตรงจังหวะแท่นเลื่อนขึ้นมา
             setTimeout(() => {
                 SFX.victory();
                 shootConfetti();
             }, 1000);
         }
 
-        // ฟังก์ชันยิงพลุกระดาษ (Confetti) ต่อเนื่อง 3 วินาที
         function shootConfetti() {
             var duration = 3000;
             var end = Date.now() + duration;
 
             (function frame() {
-                // ยิงจากฝั่งซ้าย
                 confetti({
                     particleCount: 5,
                     angle: 60,
@@ -706,7 +756,6 @@
                     origin: { x: 0 },
                     colors: ['#fbbf24', '#3b82f6', '#ef4444', '#10b981']
                 });
-                // ยิงจากฝั่งขวา
                 confetti({
                     particleCount: 5,
                     angle: 120,
