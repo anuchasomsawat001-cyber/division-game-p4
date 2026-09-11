@@ -103,14 +103,19 @@
         
         <!-- โอกาสทองคนดู (Steal Overlay) -->
         <div id="steal-overlay" class="absolute inset-0 z-[80] hidden bg-slate-900/95 flex-col items-center p-8 backdrop-blur-md">
-            <h2 class="text-4xl md:text-5xl font-black text-yellow-400 mb-2 animate-pulse">🚨 หมดเวลา! โอกาสทองของคนดู 🚨</h2>
-            <p class="text-xl text-gray-300 mb-8">ใครรู้คำตอบบ้าง? ยกมือขึ้นแล้วให้คุณครูคลิกชื่อเพื่อตอบ!</p>
+            <h2 class="text-4xl md:text-5xl font-black text-yellow-400 mb-2 animate-pulse shrink-0">🚨 หมดเวลา! โอกาสทองของคนดู 🚨</h2>
+            <p class="text-xl text-gray-300 mb-6 shrink-0">ใครรู้คำตอบบ้าง? ยกมือขึ้นแล้วให้คุณครูคลิกชื่อเพื่อตอบ!</p>
             
+            <!-- กล่องโจทย์ (เพิ่มใหม่ตรงนี้) -->
+            <div class="bg-slate-900 border-4 border-cyan-400 rounded-3xl px-12 py-6 mb-8 shadow-[0_0_40px_rgba(34,211,238,0.4)] shrink-0 flex justify-center items-center">
+                <span id="steal-question-display" class="text-6xl md:text-8xl font-black text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></span>
+            </div>
+
             <div id="steal-players-grid" class="flex flex-wrap justify-center gap-4 w-full max-w-5xl overflow-y-auto mb-8 hide-scroll flex-1 content-start">
                 <!-- ปุ่มชื่อเด็กจะมาโชว์ที่นี่ -->
             </div>
             
-            <button onclick="skipStealPhase()" class="bg-slate-700 hover:bg-slate-600 text-white text-2xl font-bold py-4 px-10 btn-arcade border-2 border-slate-500 mt-auto shadow-lg">⏭️ ไม่มีใครรู้ (ข้ามข้อนี้ไปสุ่มคู่ใหม่)</button>
+            <button onclick="skipStealPhase()" class="bg-slate-700 hover:bg-slate-600 text-white text-2xl font-bold py-4 px-10 btn-arcade border-2 border-slate-500 mt-auto shadow-lg shrink-0">⏭️ ไม่มีใครรู้ (ข้ามข้อนี้ไปสุ่มคู่ใหม่)</button>
         </div>
 
         <!-- หน้าต่างกรอกคำตอบขโมยคะแนน (Steal Input Modal) -->
@@ -149,7 +154,7 @@
         <div class="h-32 bg-slate-950 border-t-4 border-slate-700 flex flex-col items-center py-2 shrink-0 relative z-20">
             <div class="text-yellow-400 font-bold mb-2 text-sm tracking-widest uppercase flex justify-between w-full px-8 items-center">
                 <span>🏆 กระดานคะแนนรวม (Live) 🏆</span>
-                <button onclick="showPodium()" class="bg-slate-800 text-gray-300 hover:text-white px-4 py-1 rounded-full text-xs transition border border-slate-600 hover:bg-slate-700">🛑 จบการแข่งขัน / มอบรางวัล</button>
+                <button onclick="showPodium()" class="bg-slate-800 text-gray-300 hover:text-white hover:bg-slate-700 border border-slate-600 px-4 py-1 rounded-full text-xs transition">🛑 จบการแข่งขัน / มอบรางวัล</button>
             </div>
             <div id="live-leaderboard" class="flex gap-4 overflow-x-auto w-full px-8 pb-2 hide-scroll items-center justify-start scroll-smooth"></div>
         </div>
@@ -161,19 +166,16 @@
         
         <!-- แท่นรับรางวัล 1-3 -->
         <div class="flex items-end justify-center gap-2 md:gap-6 h-72 mb-12 px-4 w-full max-w-4xl shrink-0">
-            <!-- อันดับ 2 -->
             <div class="flex flex-col items-center w-1/3 podium-up" style="animation-delay: 0.5s;">
                 <div id="podium-2-name" class="text-xl md:text-3xl font-bold text-gray-300 mb-2 truncate w-full text-center px-2"></div>
                 <div id="podium-2-score" class="text-lg md:text-xl text-gray-400 mb-2 font-bold"></div>
                 <div class="w-full h-40 bg-gradient-to-b from-gray-300 to-gray-500 rounded-t-xl flex justify-center items-start pt-4 text-5xl font-black shadow-[0_0_30px_rgba(156,163,175,0.3)] text-gray-800 border-t-4 border-gray-100">2</div>
             </div>
-            <!-- อันดับ 1 -->
             <div class="flex flex-col items-center w-1/3 podium-up" style="animation-delay: 1s;">
                 <div id="podium-1-name" class="text-3xl md:text-5xl font-black text-yellow-400 mb-2 truncate w-full text-center px-2 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]"></div>
                 <div id="podium-1-score" class="text-xl md:text-2xl text-yellow-200 mb-2 font-bold"></div>
                 <div class="w-full h-56 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-t-xl flex justify-center items-start pt-4 text-6xl font-black shadow-[0_0_40px_rgba(250,204,21,0.5)] text-yellow-900 border-t-4 border-yellow-200">1</div>
             </div>
-            <!-- อันดับ 3 -->
             <div class="flex flex-col items-center w-1/3 podium-up" style="animation-delay: 0s;">
                 <div id="podium-3-name" class="text-xl md:text-3xl font-bold text-orange-400 mb-2 truncate w-full text-center px-2"></div>
                 <div id="podium-3-score" class="text-lg md:text-xl text-orange-300 mb-2 font-bold"></div>
@@ -187,10 +189,7 @@
                 <div class="bg-slate-700 py-4 px-6 font-bold text-white text-2xl border-b-2 border-slate-600 flex justify-between items-center">
                     <span>📋 ตารางคะแนนนักเรียนทั้งหมด</span>
                 </div>
-                <!-- รายชื่อเด็ก -->
-                <div class="max-h-60 overflow-y-auto hide-scroll" id="full-leaderboard-list">
-                    <!-- จะถูกสร้างอัตโนมัติผ่าน Javascript -->
-                </div>
+                <div class="max-h-60 overflow-y-auto hide-scroll" id="full-leaderboard-list"></div>
             </div>
         </div>
 
@@ -225,11 +224,9 @@
         let currentAnswer = 0, timerInterval, timeRemaining = 0, round = 1;
         let isGameActive = false; 
         
-        // ตัวแปรสำหรับระบบช่วงชิงคะแนน
         let failedStealers = [];
         let currentStealer = "";
 
-        // เคลียร์ฐานข้อมูลตั้งแต่เริ่ม
         try { db.ref('answers').set({ p1: "", p2: "" }); } catch(e){}
 
         let audioCtx; function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if(audioCtx.state === 'suspended') audioCtx.resume(); }
@@ -259,7 +256,7 @@
             else { box.classList.add('bg-gray-800', 'border-gray-400'); titleEl.classList.add('text-yellow-400'); }
             
             overlay.classList.remove('hidden');
-            overlay.style.display = 'flex'; // Force display
+            overlay.style.display = 'flex';
 
             setTimeout(() => { 
                 overlay.classList.add('hidden'); 
@@ -357,17 +354,18 @@
             }, 1000);
         }
 
-        // ==========================================
-        // ระบบโอกาสทองของคนดู (Audience Rescue) Bulletproof Version
-        // ==========================================
         function startStealPhase() {
             isGameActive = false;
             failedStealers = [];
-            try { db.ref('answers').set({ p1: "", p2: "" }); } catch(e){} // เคลียร์ iPad
+            try { db.ref('answers').set({ p1: "", p2: "" }); } catch(e){} 
             
+            // ดึงข้อความโจทย์ปัจจุบันไปแสดง
+            const currentQ = document.getElementById('question-display').innerText;
+            document.getElementById('steal-question-display').innerText = currentQ;
+
             const overlay = document.getElementById('steal-overlay');
             overlay.classList.remove('hidden');
-            overlay.style.display = 'flex'; // บังคับแสดงผล
+            overlay.style.display = 'flex'; 
             
             renderStealGrid();
         }
@@ -377,7 +375,6 @@
             let html = '';
             
             players.forEach(p => {
-                // ข้ามคนที่แข่งอยู่หน้าเวที
                 if ((currentP1 && p.name === currentP1.name) || (currentP2 && p.name === currentP2.name)) return;
                 
                 const hasFailed = failedStealers.includes(p.name);
@@ -400,7 +397,7 @@
             
             const modal = document.getElementById('steal-input-modal');
             modal.classList.remove('hidden');
-            modal.style.display = 'flex'; // บังคับแสดงผล
+            modal.style.display = 'flex'; 
             
             setTimeout(() => inputEl.focus(), 100);
         }
@@ -454,9 +451,6 @@
             showGameAlert("หมดเวลา!", "ไม่มีใครตอบถูกเลย ⏱️", "draw");
         }
 
-        // ==========================================
-        // ระบบรับคำตอบจาก Firebase (iPad ส่งมา)
-        // ==========================================
         function handleIncomingAnswer(playerNum, answerVal) {
             if(!isGameActive || answerVal === "" || isNaN(answerVal)) return;
 
@@ -476,9 +470,6 @@
         db.ref('answers/p1').on('value', (snapshot) => handleIncomingAnswer(1, snapshot.val()));
         db.ref('answers/p2').on('value', (snapshot) => handleIncomingAnswer(2, snapshot.val()));
 
-        // ==========================================
-        // UI & Leaderboard
-        // ==========================================
         function updateLiveLeaderboard() {
             let sorted = [...players].sort((a, b) => b.score - a.score), html = '';
             sorted.forEach((p, i) => {
@@ -491,7 +482,6 @@
 
         function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } }
         
-        // --- ระบบจบเกม & แท่นรับรางวัล (อัปเดตใหม่ ให้มีตารางทุกคน) ---
         function showPodium() { 
             clearInterval(timerInterval); 
             document.getElementById('vs-screen').classList.add('hidden'); 
@@ -499,12 +489,10 @@
             
             let sorted = [...players].sort((a, b) => b.score - a.score);
             
-            // แทรกชื่อคนได้ที่ 1-3 บนแท่น
             if(sorted[0]) { document.getElementById('podium-1-name').innerText = "🥇 " + sorted[0].name; document.getElementById('podium-1-score').innerText = sorted[0].score + " คะแนน"; }
             if(sorted[1]) { document.getElementById('podium-2-name').innerText = "🥈 " + sorted[1].name; document.getElementById('podium-2-score').innerText = sorted[1].score + " คะแนน"; }
             if(sorted[2]) { document.getElementById('podium-3-name').innerText = "🥉 " + sorted[2].name; document.getElementById('podium-3-score').innerText = sorted[2].score + " คะแนน"; }
             
-            // สร้างลิสต์รายชื่อทุกคนใส่ในตารางด้านล่าง
             let listHtml = '';
             sorted.forEach((p, index) => {
                 let bgClass = index % 2 === 0 ? 'bg-slate-800' : 'bg-slate-900/50';
@@ -520,7 +508,6 @@
             });
             document.getElementById('full-leaderboard-list').innerHTML = listHtml;
 
-            // เอฟเฟกต์ฉลองชัยชนะ
             setTimeout(() => { 
                 SFX.play(523.25, 'square', 0.1); setTimeout(() => SFX.play(659.25, 'square', 0.1), 150); 
                 setTimeout(() => SFX.play(783.99, 'square', 0.1), 300); setTimeout(() => SFX.play(1046.50, 'square', 0.2), 450); 
@@ -528,7 +515,6 @@
             }, 500);
         }
 
-        // --- ระบบดาวน์โหลด Excel ---
         function downloadScoresCSV() {
             if (players.length === 0) return;
             let csvContent = "\uFEFFอันดับ,ชื่อนักเรียน,คะแนน\n";
